@@ -5,5 +5,12 @@
     "useNativePlayer": true,
     "author": "",
     "lastUpdate": 1731500559000
+  },
+    {
+    "name": "xfdm",
+    "version": "1.5",
+    "useNativePlayer": true,
+    "author": "",
+    "lastUpdate": 1745461565000
   }
 ]
