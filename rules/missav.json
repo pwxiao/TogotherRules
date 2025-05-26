@@ -7,7 +7,7 @@
     "muliSources": false,
     "useWebview": true,
     "useNativePlayer": true,
-    "userAgent": "",
+    "userAgent": "Dart Test App/1.0",
     "baseURL": "https://missav.ws/",
     "searchURL": "https://missav.ws/search/@keyword",
     "searchList": "//body/div/div[3]/div[3]/div",
