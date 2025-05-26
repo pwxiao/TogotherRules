@@ -12,6 +12,9 @@ on:
       - 'rules/*.json'
       - '!rules/index.json'
 
+permissions:
+  contents: write
+
 jobs:
   sync-rules:
     runs-on: ubuntu-latest
@@ -21,6 +24,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
         
     - name: 设置 Node.js
       uses: actions/setup-node@v4
@@ -80,8 +84,8 @@ jobs:
     - name: 提交变更
       if: steps.check-changes.outputs.has_changes == 'true'
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
         git add rules/index.json
         git commit -m "自动同步规则到 index.json [skip ci]"
         git push
