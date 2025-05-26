@@ -1,12 +1,7 @@
 {
-    "api": "3",
-    "type": "anime",
     "name": "kimivod",
     "version": "1.0",
-    "muliSources": false,
-    "useWebview": true,
-    "useNativePlayer": true,
-    "userAgent": "",
+    "author": "qiaobusi",
     "baseURL": "https://www.kimivod.com/",
     "searchURL": "https://cn.kimivod.com/search.php?searchword=@keyword",
     "searchList": "//ul[@id='searchList']/li",
