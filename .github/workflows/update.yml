@@ -80,6 +80,7 @@ jobs:
             
             const indexEntry = {
               name: ruleName,
+              displayName: ruleData.displayName || ruleName,
               version: ruleData.version || "1.0",
               useNativePlayer: ruleData.useNativePlayer || true,
               author: ruleData.author || "",
