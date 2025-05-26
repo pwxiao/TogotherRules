@@ -3,6 +3,7 @@
     "type": "anime",
     "name": "4kvm",
     "displayName": "4k影视",
+    "author": "qiaobusi",
     "version": "1.0",
     "muliSources": false,
     "useWebview": true,
