@@ -1,9 +1,9 @@
 {
     "api": "3",
+    "type": "anime",
     "name": "kimivod",
     "version": "1.0",
     "author": "qiaobusi",
-    "type": "anime",
     "muliSources": true,
     "useWebview": true,
     "useNativePlayer": true,
