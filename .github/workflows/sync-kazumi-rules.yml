@@ -1,0 +1,434 @@
+name: 同步 KazumiRules 规则
+
+on:
+  # 每天凌晨 2 点自动同步
+  schedule:
+    - cron: '0 2 * * *'
+  # 手动触发
+  workflow_dispatch:
+    inputs:
+      sync_strategy:
+        description: '同步策略'
+        required: true
+        default: 'smart'
+        type: choice
+        options:
+          - 'full'      # 完全同步，覆盖所有文件
+          - 'smart'     # 智能同步，基于版本和时间戳
+          - 'incremental' # 增量同步，只添加新规则
+          - 'selective' # 选择性同步，基于配置列表
+      selected_rules:
+        description: '选择性同步的规则列表 (逗号分隔，仅当策略为 selective 时有效)'
+        required: false
+        default: ''
+      force_update:
+        description: '强制更新所有规则'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  sync-rules:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+        
+    - name: 设置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: 创建同步脚本
+      run: |
+        cat > sync_kazumi_rules.js << 'EOF'
+        const fs = require('fs');
+        const path = require('path');
+        const https = require('https');
+        
+        // 配置
+        const CONFIG = {
+          KAZUMI_REPO: 'https://raw.githubusercontent.com/Predidit/KazumiRules/main',
+          LOCAL_RULES_DIR: './rules',
+          LOCAL_INDEX_FILE: './index.json',
+          BACKUP_DIR: './backup',
+          MAX_CONCURRENT: 5,
+          RETRY_COUNT: 3,
+          SYNC_STRATEGY: process.env.SYNC_STRATEGY || 'smart',
+          SELECTED_RULES: process.env.SELECTED_RULES ? process.env.SELECTED_RULES.split(',').map(s => s.trim()) : [],
+          FORCE_UPDATE: process.env.FORCE_UPDATE === 'true'
+        };
+        
+        // 统计信息
+        const stats = {
+          total: 0,
+          downloaded: 0,
+          updated: 0,
+          added: 0,
+          skipped: 0,
+          failed: 0,
+          errors: []
+        };
+        
+        // HTTP 请求封装
+        function httpsGet(url) {
+          return new Promise((resolve, reject) => {
+            const req = https.get(url, (res) => {
+              let data = '';
+              res.on('data', chunk => data += chunk);
+              res.on('end', () => {
+                if (res.statusCode === 200) {
+                  resolve(data);
+                } else {
+                  reject(new Error(`HTTP ${res.statusCode}: ${url}`));
+                }
+              });
+            });
+            req.on('error', reject);
+            req.setTimeout(30000, () => {
+              req.destroy();
+              reject(new Error(`Timeout: ${url}`));
+            });
+          });
+        }
+        
+        // 重试机制
+        async function withRetry(fn, retries = CONFIG.RETRY_COUNT) {
+          for (let i = 0; i < retries; i++) {
+            try {
+              return await fn();
+            } catch (error) {
+              if (i === retries - 1) throw error;
+              console.log(`重试 ${i + 1}/${retries}: ${error.message}`);
+              await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+            }
+          }
+        }
+        
+        // 获取 KazumiRules 的 index.json
+        async function fetchKazumiIndex() {
+          console.log('📥 获取 KazumiRules index.json...');
+          const url = `${CONFIG.KAZUMI_REPO}/index.json`;
+          const data = await withRetry(() => httpsGet(url));
+          return JSON.parse(data);
+        }
+        
+        // 获取本地 index.json
+        function getLocalIndex() {
+          if (!fs.existsSync(CONFIG.LOCAL_INDEX_FILE)) {
+            return [];
+          }
+          try {
+            return JSON.parse(fs.readFileSync(CONFIG.LOCAL_INDEX_FILE, 'utf8'));
+          } catch (error) {
+            console.log('⚠️  本地 index.json 解析失败，将创建新的');
+            return [];
+          }
+        }
+        
+        // 检查规则是否需要更新
+        function shouldUpdateRule(remoteRule, localRule) {
+          if (CONFIG.FORCE_UPDATE) return true;
+          if (!localRule) return true;
+          
+          switch (CONFIG.SYNC_STRATEGY) {
+            case 'full':
+              return true;
+            case 'smart':
+              // 比较版本和更新时间
+              if (remoteRule.version !== localRule.version) return true;
+              if (remoteRule.lastUpdate > localRule.lastUpdate) return true;
+              return false;
+            case 'incremental':
+              return !localRule;
+            case 'selective':
+              return CONFIG.SELECTED_RULES.includes(remoteRule.name) && 
+                     (remoteRule.version !== localRule.version || remoteRule.lastUpdate > localRule.lastUpdate);
+            default:
+              return false;
+          }
+        }
+        
+        // 下载规则文件
+        async function downloadRule(ruleName) {
+          const url = `${CONFIG.KAZUMI_REPO}/${ruleName}.json`;
+          console.log(`  📥 下载 ${ruleName}.json...`);
+          
+          try {
+            const data = await withRetry(() => httpsGet(url));
+            const ruleData = JSON.parse(data);
+            
+            // 验证规则文件格式
+            if (!ruleData.name || !ruleData.version) {
+              throw new Error(`规则文件格式无效: ${ruleName}`);
+            }
+            
+            return ruleData;
+          } catch (error) {
+            stats.errors.push(`下载 ${ruleName} 失败: ${error.message}`);
+            throw error;
+          }
+        }
+        
+        // 保存规则文件
+        function saveRule(ruleData) {
+          const filePath = path.join(CONFIG.LOCAL_RULES_DIR, `${ruleData.name}.json`);
+          
+          // 备份现有文件
+          if (fs.existsSync(filePath) && !fs.existsSync(CONFIG.BACKUP_DIR)) {
+            fs.mkdirSync(CONFIG.BACKUP_DIR, { recursive: true });
+            const backupPath = path.join(CONFIG.BACKUP_DIR, `${ruleData.name}.json.bak`);
+            fs.copyFileSync(filePath, backupPath);
+          }
+          
+          fs.writeFileSync(filePath, JSON.stringify(ruleData, null, 2));
+          console.log(`  ✅ 已保存 ${ruleData.name}.json`);
+        }
+        
+        // 并发控制
+        async function processRulesInBatches(rules, processor) {
+          const results = [];
+          for (let i = 0; i < rules.length; i += CONFIG.MAX_CONCURRENT) {
+            const batch = rules.slice(i, i + CONFIG.MAX_CONCURRENT);
+            const batchResults = await Promise.allSettled(
+              batch.map(processor)
+            );
+            results.push(...batchResults);
+          }
+          return results;
+        }
+        
+        // 主同步逻辑
+        async function syncRules() {
+          try {
+            console.log('🚀 开始同步 KazumiRules...');
+            console.log(`📋 同步策略: ${CONFIG.SYNC_STRATEGY}`);
+            
+            // 确保目录存在
+            if (!fs.existsSync(CONFIG.LOCAL_RULES_DIR)) {
+              fs.mkdirSync(CONFIG.LOCAL_RULES_DIR, { recursive: true });
+            }
+            
+            // 获取远程和本地索引
+            const remoteIndex = await fetchKazumiIndex();
+            const localIndex = getLocalIndex();
+            
+            console.log(`📊 远程规则数量: ${remoteIndex.length}`);
+            console.log(`📊 本地规则数量: ${localIndex.length}`);
+            
+            // 创建本地规则映射
+            const localRulesMap = {};
+            localIndex.forEach(rule => {
+              localRulesMap[rule.name] = rule;
+            });
+            
+            // 筛选需要处理的规则
+            let rulesToProcess = remoteIndex;
+            
+            if (CONFIG.SYNC_STRATEGY === 'selective' && CONFIG.SELECTED_RULES.length > 0) {
+              rulesToProcess = remoteIndex.filter(rule => CONFIG.SELECTED_RULES.includes(rule.name));
+              console.log(`🎯 选择性同步规则: ${CONFIG.SELECTED_RULES.join(', ')}`);
+            }
+            
+            stats.total = rulesToProcess.length;
+            
+            // 处理每个规则
+            const results = await processRulesInBatches(rulesToProcess, async (remoteRule) => {
+              const localRule = localRulesMap[remoteRule.name];
+              
+              if (!shouldUpdateRule(remoteRule, localRule)) {
+                console.log(`  ⏭️  跳过 ${remoteRule.name} (无需更新)`);
+                stats.skipped++;
+                return { status: 'skipped', rule: remoteRule };
+              }
+              
+              try {
+                const ruleData = await downloadRule(remoteRule.name);
+                saveRule(ruleData);
+                
+                stats.downloaded++;
+                if (localRule) {
+                  stats.updated++;
+                  console.log(`  🔄 已更新 ${remoteRule.name} (${localRule.version} → ${remoteRule.version})`);
+                } else {
+                  stats.added++;
+                  console.log(`  ➕ 已添加 ${remoteRule.name} (${remoteRule.version})`);
+                }
+                
+                return { status: 'success', rule: remoteRule };
+              } catch (error) {
+                stats.failed++;
+                console.error(`  ❌ 处理 ${remoteRule.name} 失败: ${error.message}`);
+                return { status: 'failed', rule: remoteRule, error };
+              }
+            });
+            
+            // 输出统计信息
+            console.log('\n📊 同步统计:');
+            console.log(`  总计: ${stats.total}`);
+            console.log(`  下载: ${stats.downloaded}`);
+            console.log(`  更新: ${stats.updated}`);
+            console.log(`  新增: ${stats.added}`);
+            console.log(`  跳过: ${stats.skipped}`);
+            console.log(`  失败: ${stats.failed}`);
+            
+            if (stats.errors.length > 0) {
+              console.log('\n❌ 错误详情:');
+              stats.errors.forEach(error => console.log(`  - ${error}`));
+            }
+            
+            // 设置 GitHub Actions 输出
+            const output = {
+              total: stats.total,
+              downloaded: stats.downloaded,
+              updated: stats.updated,
+              added: stats.added,
+              skipped: stats.skipped,
+              failed: stats.failed,
+              has_changes: stats.downloaded > 0
+            };
+            
+            console.log(`\n::set-output name=sync_stats::${JSON.stringify(output)}`);
+            
+            if (stats.downloaded > 0) {
+              console.log('\n✅ 同步完成，有文件更新');
+            } else {
+              console.log('\n✅ 同步完成，无文件更新');
+            }
+            
+          } catch (error) {
+            console.error('❌ 同步失败:', error.message);
+            process.exit(1);
+          }
+        }
+        
+        // 执行同步
+        syncRules();
+        EOF
+        
+    - name: 执行同步
+      id: sync
+      env:
+        SYNC_STRATEGY: ${{ github.event.inputs.sync_strategy || 'smart' }}
+        SELECTED_RULES: ${{ github.event.inputs.selected_rules || '' }}
+        FORCE_UPDATE: ${{ github.event.inputs.force_update || 'false' }}
+      run: node sync_kazumi_rules.js
+      
+    - name: 检查同步结果
+      id: check-sync
+      run: |
+        if [ -f "./rules/*.json" ]; then
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+          echo "files_count=$(ls -1 ./rules/*.json | wc -l)" >> $GITHUB_OUTPUT
+        else
+          echo "has_changes=false" >> $GITHUB_OUTPUT
+          echo "files_count=0" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: 更新本地 index.json
+      if: steps.check-sync.outputs.has_changes == 'true'
+      run: |
+        # 复用现有的同步脚本逻辑
+        cat > update_index.js << 'EOF'
+        const fs = require('fs');
+        const path = require('path');
+        
+        const rulesDir = './rules';
+        const indexFile = './index.json';
+        
+        let existingIndex = [];
+        if (fs.existsSync(indexFile)) {
+          try {
+            existingIndex = JSON.parse(fs.readFileSync(indexFile, 'utf8'));
+          } catch (error) {
+            console.log('无法读取现有index.json，将创建新的');
+          }
+        }
+        
+        const ruleFiles = fs.readdirSync(rulesDir)
+          .filter(file => file.endsWith('.json'));
+        
+        const indexData = [];
+        
+        ruleFiles.forEach(file => {
+          try {
+            const filePath = path.join(rulesDir, file);
+            const ruleData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+            const ruleName = ruleData.name || path.basename(file, '.json');
+            
+            const existingRule = existingIndex.find(rule => rule.name === ruleName);
+            const fileStats = fs.statSync(filePath);
+            const fileModTime = fileStats.mtime.getTime();
+            
+            let lastUpdate;
+            if (existingRule) {
+              if (fileModTime > existingRule.lastUpdate) {
+                lastUpdate = Date.now();
+                console.log(`规则 ${ruleName} 已更新`);
+              } else {
+                lastUpdate = existingRule.lastUpdate;
+              }
+            } else {
+              lastUpdate = Date.now();
+              console.log(`新规则 ${ruleName} 已添加`);
+            }
+            
+            const indexEntry = {
+              name: ruleName,
+              displayName: ruleData.displayName || ruleName,
+              version: ruleData.version || "1.0",
+              useNativePlayer: ruleData.useNativePlayer !== false,
+              author: ruleData.author || "",
+              lastUpdate: lastUpdate
+            };
+            
+            indexData.push(indexEntry);
+          } catch (error) {
+            console.error(`处理文件 ${file} 时出错:`, error.message);
+          }
+        });
+        
+        indexData.sort((a, b) => a.name.localeCompare(b.name));
+        
+        fs.writeFileSync(indexFile, JSON.stringify(indexData, null, 2));
+        console.log(`已同步 ${indexData.length} 个规则到 index.json`);
+        EOF
+        
+        node update_index.js
+        
+    - name: 提交变更
+      if: steps.check-sync.outputs.has_changes == 'true'
+      run: |
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add rules/ index.json
+        
+        # 生成提交信息
+        COMMIT_MSG="🔄 同步 KazumiRules 规则文件
+        
+        - 同步策略: ${{ github.event.inputs.sync_strategy || 'smart' }}
+        - 规则文件数: ${{ steps.check-sync.outputs.files_count }}
+        - 触发方式: ${{ github.event_name }}
+        
+        [skip ci]"
+        
+        git commit -m "$COMMIT_MSG"
+        git push
+        
+    - name: 同步完成通知
+      if: always()
+      run: |
+        if [ "${{ steps.check-sync.outputs.has_changes }}" == "true" ]; then
+          echo "✅ KazumiRules 同步完成！"
+          echo "📁 已同步 ${{ steps.check-sync.outputs.files_count }} 个规则文件"
+          echo "🔄 本地 index.json 已自动更新"
+        else
+          echo "ℹ️  无需同步，所有规则都是最新的"
+        fi
