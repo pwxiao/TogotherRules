@@ -1,0 +1,18 @@
+{
+  "api": "3",
+  "type": "anime",
+  "name": "giriGiriLove",
+  "version": "0.0.6",
+  "muliSources": true,
+  "useWebview": true,
+  "useNativePlayer": true,
+  "useLegacyParser": true,
+  "userAgent": "",
+  "baseURL": "https://anime.girigirilove.com",
+  "searchURL": "https://anime.girigirilove.com/search/-------------/?wd=@keyword",
+  "searchList": "//div[4]/div[1]/div[1]/div[1]/div",
+  "searchName": "//div[3]/div[1]/div[1]",
+  "searchResult": "//div[3]/div[2]/a[1]",
+  "chapterRoads": "//div[5]/div[2]/div[2]/div/div/ul",
+  "chapterResult": "//li/a"
+}
