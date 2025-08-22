@@ -295,7 +295,24 @@ jobs:
               has_changes: stats.downloaded > 0
             };
             
-            console.log(`\n::set-output name=sync_stats::${JSON.stringify(output)}`);
+            // 设置 GitHub Actions 输出 (新格式)
+            const fs = require('fs');
+            if (process.env.GITHUB_OUTPUT) {
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, `sync_stats=${JSON.stringify(output)}\n`);
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, `has_changes=${output.has_changes}\n`);
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, `total=${output.total}\n`);
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, `downloaded=${output.downloaded}\n`);
+            }
+            
+            // 写入同步结果文件用于调试
+            const resultSummary = {
+              strategy: CONFIG.SYNC_STRATEGY,
+              timestamp: new Date().toISOString(),
+              stats: stats,
+              has_changes: stats.downloaded > 0
+            };
+            
+            fs.writeFileSync('sync_result.txt', JSON.stringify(resultSummary, null, 2));
             
             if (stats.downloaded > 0) {
               console.log('\n✅ 同步完成，有文件更新');
@@ -324,12 +341,21 @@ jobs:
     - name: 检查同步结果
       id: check-sync
       run: |
-        if [ -f "./rules/*.json" ]; then
+        # 检查 rules 目录是否存在且有 JSON 文件
+        if [ -d "./rules" ] && [ "$(find ./rules -name '*.json' | wc -l)" -gt 0 ]; then
           echo "has_changes=true" >> $GITHUB_OUTPUT
-          echo "files_count=$(ls -1 ./rules/*.json | wc -l)" >> $GITHUB_OUTPUT
+          echo "files_count=$(find ./rules -name '*.json' | wc -l)" >> $GITHUB_OUTPUT
+          echo "✅ 发现 $(find ./rules -name '*.json' | wc -l) 个规则文件"
         else
-          echo "has_changes=false" >> $GITHUB_OUTPUT
+          echo "has_changes=false" >> $GITHUB_OUTPUT  
           echo "files_count=0" >> $GITHUB_OUTPUT
+          echo "ℹ️  未发现规则文件"
+        fi
+        
+        # 额外检查：输出同步脚本的结果
+        if [ -f "sync_result.txt" ]; then
+          echo "📊 同步脚本结果:"
+          cat sync_result.txt
         fi
         
     - name: 更新本地 index.json
@@ -425,10 +451,16 @@ jobs:
     - name: 同步完成通知
       if: always()
       run: |
+        echo "📊 同步统计信息:"
+        echo "  - 检查结果: has_changes=${{ steps.check-sync.outputs.has_changes }}"
+        echo "  - 文件数量: files_count=${{ steps.check-sync.outputs.files_count }}"
+        
         if [ "${{ steps.check-sync.outputs.has_changes }}" == "true" ]; then
           echo "✅ KazumiRules 同步完成！"
           echo "📁 已同步 ${{ steps.check-sync.outputs.files_count }} 个规则文件"
           echo "🔄 本地 index.json 已自动更新"
         else
           echo "ℹ️  无需同步，所有规则都是最新的"
+          echo "🔍 调试信息: 检查 rules/ 目录是否存在文件"
+          ls -la rules/ || echo "rules/ 目录不存在或为空"
         fi
