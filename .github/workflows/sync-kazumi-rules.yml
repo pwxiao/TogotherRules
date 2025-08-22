@@ -296,7 +296,6 @@ jobs:
             };
             
             // 设置 GitHub Actions 输出 (新格式)
-            const fs = require('fs');
             if (process.env.GITHUB_OUTPUT) {
               fs.appendFileSync(process.env.GITHUB_OUTPUT, `sync_stats=${JSON.stringify(output)}\n`);
               fs.appendFileSync(process.env.GITHUB_OUTPUT, `has_changes=${output.has_changes}\n`);
