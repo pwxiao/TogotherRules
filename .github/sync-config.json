@@ -1,0 +1,28 @@
+{
+  "kazumi_repo": {
+    "owner": "Predidit",
+    "name": "KazumiRules",
+    "branch": "main"
+  },
+  "sync_settings": {
+    "default_strategy": "smart",
+    "max_concurrent_downloads": 5,
+    "retry_count": 3,
+    "timeout_ms": 30000,
+    "backup_enabled": true
+  },
+  "selective_rules": {
+    "enabled": false,
+    "whitelist": [
+      "AGE",
+      "libvio", 
+      "qimi",
+      "xfdm",
+      "7sefun"
+    ]
+  },
+  "schedule": {
+    "cron": "0 2 * * *",
+    "timezone": "UTC"
+  }
+}

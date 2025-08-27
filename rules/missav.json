@@ -1,0 +1,18 @@
+{
+    "api": "3",
+    "type": "1",
+    "name": "missav",
+    "version": "1.0",
+    "noChapter": true,
+    "muliSources": false,
+    "useWebview": true,
+    "useNativePlayer": true,
+    "userAgent": "Dart Test App/1.0",
+    "baseURL": "https://missav.ws/",
+    "searchURL": "https://missav.ws/search/@keyword",
+    "searchList": "//body/div/div[3]/div[3]/div",
+    "searchName": "//div[@class='thumbnail group']//a[@class='text-secondary group-hover:text-primary']/text()",
+    "searchResult": "//div[@class='thumbnail group']//a[@class='text-secondary group-hover:text-primary']/@href",
+    "chapterRoads": "",
+    "chapterResult": ""
+}

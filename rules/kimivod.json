@@ -1,0 +1,17 @@
+{
+    "api": "3",
+    "type": "anime",
+    "name": "kimivod",
+    "version": "1.0",
+    "author": "qiaobusi",
+    "muliSources": true,
+    "useWebview": true,
+    "useNativePlayer": true,
+    "baseURL": "https://www.kimivod.com/",
+    "searchURL": "https://cn.kimivod.com/search.php?searchword=@keyword",
+    "searchList": "//ul[@id='searchList']/li",
+    "searchName": "//h4[1]/a/text()",
+    "searchResult": "//div[1]/a/@href",
+    "chapterRoads": "//div[@class='page active']//div[@class='playno']",
+    "chapterResult": "//a/@href"
+}

@@ -1,0 +1,120 @@
+name: 同步规则到 index.json
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'rules/*.json'
+      - '!index.json'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'rules/*.json'
+      - '!index.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-rules:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+        
+    - name: 设置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: 同步规则到 index.json
+      run: |
+        cat > sync_rules.js << 'EOF'
+        const fs = require('fs');
+        const path = require('path');
+        
+        const rulesDir = './rules';
+        const indexFile = './index.json';
+        
+        let existingIndex = [];
+        if (fs.existsSync(indexFile)) {
+          try {
+            existingIndex = JSON.parse(fs.readFileSync(indexFile, 'utf8'));
+          } catch (error) {
+            console.log('无法读取现有index.json，将创建新的');
+          }
+        }
+        
+        const ruleFiles = fs.readdirSync(rulesDir)
+          .filter(file => file.endsWith('.json'));
+        
+        const indexData = [];
+        
+        ruleFiles.forEach(file => {
+          try {
+            const filePath = path.join(rulesDir, file);
+            const ruleData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+            const ruleName = ruleData.name || path.basename(file, '.json');
+            
+            const existingRule = existingIndex.find(rule => rule.name === ruleName);
+            const fileStats = fs.statSync(filePath);
+            const fileModTime = fileStats.mtime.getTime();
+            
+            let lastUpdate;
+            if (existingRule) {
+              if (fileModTime > existingRule.lastUpdate) {
+                lastUpdate = Date.now();
+                console.log(`规则 ${ruleName} 已更新`);
+              } else {
+                lastUpdate = existingRule.lastUpdate;
+              }
+            } else {
+              lastUpdate = Date.now();
+              console.log(`新规则 ${ruleName} 已添加`);
+            }
+            
+            const indexEntry = {
+              name: ruleName,
+              displayName: ruleData.displayName || ruleName,
+              version: ruleData.version || "1.0",
+              useNativePlayer: ruleData.useNativePlayer || true,
+              author: ruleData.author || "",
+              lastUpdate: lastUpdate
+            };
+            
+            indexData.push(indexEntry);
+          } catch (error) {
+            console.error(`处理文件 ${file} 时出错:`, error.message);
+          }
+        });
+        
+        indexData.sort((a, b) => a.name.localeCompare(b.name));
+        
+        fs.writeFileSync(indexFile, JSON.stringify(indexData, null, 2));
+        console.log(`已同步 ${indexData.length} 个规则到 index.json`);
+        EOF
+        
+        node sync_rules.js
+        
+    - name: 检查是否有变更
+      id: check-changes
+      run: |
+        if git diff --quiet index.json; then
+          echo "has_changes=false" >> $GITHUB_OUTPUT
+        else
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: 提交变更
+      if: steps.check-changes.outputs.has_changes == 'true'
+      run: |
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add index.json
+        git commit -m "自动同步规则到 index.json [skip ci]"
+        git push

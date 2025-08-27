@@ -1,0 +1,20 @@
+{
+    "api": "3",
+    "type": "anime",
+    "name": "4kvm",
+    "displayName": "4k影视",
+    "author": "qiaobusi",
+    "version": "1.0",
+    "muliSources": false,
+    "useWebview": true,
+    "useNativePlayer": true,
+    "userAgent": "",
+    "noChapter": true,
+    "baseURL": "https://www.4kvm.net/",
+    "searchURL": "https://www.4kvm.net/xssearch?s=@keyword",
+    "searchList": "//div[@class='result-item']",
+    "searchName": "//div[@class='title']/a/text()",
+    "searchResult": "//div[@class='title']/a/@href",
+    "chapterRoads": "",
+    "chapterResult": ""
+}
