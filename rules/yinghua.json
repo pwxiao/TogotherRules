@@ -1,0 +1,18 @@
+{
+  "api": "4",
+  "type": "anime",
+  "name": "yinghua",
+  "version": "1.2",
+  "muliSources": true,
+  "useWebview": true,
+  "useNativePlayer": true,
+  "userAgent": "",
+  "useLegacyParser": false,
+  "baseURL": "http://www.iyinghua.com/",
+  "searchURL": "http://www.iyinghua.com/search/@keyword/",
+  "searchList": "//div[4]/div[2]/div/ul/li",
+  "searchName": "//h2/a",
+  "searchResult": "//h2/a",
+  "chapterRoads": "//div[2]/div[2]/div[4]/div/div/ul",
+  "chapterResult": "//li/a"
+}

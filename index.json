@@ -5,7 +5,7 @@
     "version": "1.0",
     "useNativePlayer": true,
     "author": "qiaobusi",
-    "lastUpdate": 1756282246042
+    "lastUpdate": 1756350383744
   },
   {
     "name": "7sefun",
@@ -13,7 +13,7 @@
     "version": "1.1",
     "useNativePlayer": true,
     "author": "",
-    "lastUpdate": 1756282246045
+    "lastUpdate": 1756350383747
   },
   {
     "name": "aafun",
@@ -21,7 +21,7 @@
     "version": "1.0",
     "useNativePlayer": true,
     "author": "",
-    "lastUpdate": 1756282246046
+    "lastUpdate": 1756350383748
   },
   {
     "name": "AGE",
@@ -29,7 +29,23 @@
     "version": "1.4",
     "useNativePlayer": true,
     "author": "",
-    "lastUpdate": 1756282246045
+    "lastUpdate": 1756350383747
+  },
+  {
+    "name": "akianime",
+    "displayName": "akianime",
+    "version": "1.3",
+    "useNativePlayer": true,
+    "author": "",
+    "lastUpdate": 1756350383749
+  },
+  {
+    "name": "ant",
+    "displayName": "ant",
+    "version": "0.0.2",
+    "useNativePlayer": true,
+    "author": "",
+    "lastUpdate": 1756350383749
   },
   {
     "name": "ciyuancheng",
@@ -37,7 +53,31 @@
     "version": "1.5",
     "useNativePlayer": true,
     "author": "",
-    "lastUpdate": 1756282246046
+    "lastUpdate": 1756350383749
+  },
+  {
+    "name": "dlma",
+    "displayName": "dlma",
+    "version": "1.0",
+    "useNativePlayer": true,
+    "author": "",
+    "lastUpdate": 1756350383749
+  },
+  {
+    "name": "DM84",
+    "displayName": "DM84",
+    "version": "1.1",
+    "useNativePlayer": true,
+    "author": "",
+    "lastUpdate": 1756350383748
+  },
+  {
+    "name": "dmand",
+    "displayName": "dmand",
+    "version": "1.1",
+    "useNativePlayer": true,
+    "author": "",
+    "lastUpdate": 1756350383750
   },
   {
     "name": "ffdm",
@@ -45,7 +85,15 @@
     "version": "1.0",
     "useNativePlayer": true,
     "author": "",
-    "lastUpdate": 1756282246046
+    "lastUpdate": 1756350383750
+  },
+  {
+    "name": "giriGiriLove",
+    "displayName": "giriGiriLove",
+    "version": "0.0.6",
+    "useNativePlayer": true,
+    "author": "",
+    "lastUpdate": 1756350383750
   },
   {
     "name": "kimivod",
@@ -53,15 +101,23 @@
     "version": "1.0",
     "useNativePlayer": true,
     "author": "qiaobusi",
-    "lastUpdate": 1756282246046
+    "lastUpdate": 1756350383750
   },
   {
     "name": "libvio",
     "displayName": "libvio",
-    "version": "0.2",
+    "version": "0.3",
     "useNativePlayer": true,
-    "author": "kazumi",
-    "lastUpdate": 1756282246046
+    "author": "",
+    "lastUpdate": 1756350383750
+  },
+  {
+    "name": "mandao",
+    "displayName": "mandao",
+    "version": "1.3",
+    "useNativePlayer": true,
+    "author": "",
+    "lastUpdate": 1756350383751
   },
   {
     "name": "missav",
@@ -69,7 +125,15 @@
     "version": "1.0",
     "useNativePlayer": true,
     "author": "",
-    "lastUpdate": 1756282246047
+    "lastUpdate": 1756350383751
+  },
+  {
+    "name": "moefan",
+    "displayName": "moefan",
+    "version": "1.0",
+    "useNativePlayer": true,
+    "author": "",
+    "lastUpdate": 1756350383751
   },
   {
     "name": "mwcy",
@@ -77,7 +141,7 @@
     "version": "0.0.6",
     "useNativePlayer": true,
     "author": "",
-    "lastUpdate": 1756282246047
+    "lastUpdate": 1756350383751
   },
   {
     "name": "MXdm",
@@ -85,15 +149,55 @@
     "version": "2.1",
     "useNativePlayer": true,
     "author": "",
-    "lastUpdate": 1756282246045
+    "lastUpdate": 1756350383748
+  },
+  {
+    "name": "NT",
+    "displayName": "NT",
+    "version": "1.2",
+    "useNativePlayer": true,
+    "author": "",
+    "lastUpdate": 1756350383748
+  },
+  {
+    "name": "qdm",
+    "displayName": "qdm",
+    "version": "1.3",
+    "useNativePlayer": true,
+    "author": "",
+    "lastUpdate": 1756350383751
   },
   {
     "name": "qimi",
     "displayName": "qimi",
-    "version": "1.1",
+    "version": "1.2",
     "useNativePlayer": true,
     "author": "",
-    "lastUpdate": 1756282246047
+    "lastUpdate": 1756350383751
+  },
+  {
+    "name": "qkan9",
+    "displayName": "qkan9",
+    "version": "1.0",
+    "useNativePlayer": true,
+    "author": "",
+    "lastUpdate": 1756350383751
+  },
+  {
+    "name": "tt776b",
+    "displayName": "tt776b",
+    "version": "1.0",
+    "useNativePlayer": true,
+    "author": "",
+    "lastUpdate": 1756350383751
+  },
+  {
+    "name": "WYDM",
+    "displayName": "WYDM",
+    "version": "1.2",
+    "useNativePlayer": true,
+    "author": "",
+    "lastUpdate": 1756350383748
   },
   {
     "name": "xfdm",
@@ -101,6 +205,30 @@
     "version": "1.6",
     "useNativePlayer": true,
     "author": "",
-    "lastUpdate": 1756282246047
+    "lastUpdate": 1756350383752
+  },
+  {
+    "name": "yinghua",
+    "displayName": "yinghua",
+    "version": "1.2",
+    "useNativePlayer": true,
+    "author": "",
+    "lastUpdate": 1756350383752
+  },
+  {
+    "name": "yishijie",
+    "displayName": "yishijie",
+    "version": "1.1",
+    "useNativePlayer": true,
+    "author": "",
+    "lastUpdate": 1756350383752
+  },
+  {
+    "name": "ylsp",
+    "displayName": "ylsp",
+    "version": "1.0",
+    "useNativePlayer": true,
+    "author": "",
+    "lastUpdate": 1756350383752
   }
 ]
