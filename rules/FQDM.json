@@ -1,0 +1,18 @@
+{
+  "api": "4",
+  "type": "anime",
+  "name": "FQDM",
+  "version": "1.2",
+  "muliSources": true,
+  "useWebview": true,
+  "useNativePlayer": true,
+  "useLegacyParser": true,
+  "userAgent": "",
+  "baseURL": "https://www.fqdm.cc/",
+  "searchURL": "https://www.fqdm.cc/index.php/vod/search.html?wd=@keyword",
+  "searchList": "//div[1]/div[2]/div/div/div[3]/div//div",
+  "searchName": "//div[2]/div[1]/a/strong",
+  "searchResult": "//div[3]/a[2]",
+  "chapterRoads": "//div[@class='module-play-list-content  module-play-list-base']",
+  "chapterResult": "//a"
+}
